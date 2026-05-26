@@ -1,0 +1,5 @@
+{
+  "name": "hybrid-router-plugin",
+  "description": "Routeur intelligent hybride déléguant proactivement les tâches de masse et la correction de code à un LLM local.",
+  "version": "2.0.0"
+}
