@@ -122,6 +122,14 @@ cat server.log | python3 scripts/query_local_llm.py
 
 ---
 
+## Contributors & Co-Creators
+
+- **@tripesinn** (Lead Architect & Visionary)
+- **Antigravity AI** (Autonomous Coding Agent & Co-Creator)
+
+---
+
 ## License
 MIT License. Feel free to use, share, and improve this plugin!
 Disponible pour toute la communauté Antigravity.
+
