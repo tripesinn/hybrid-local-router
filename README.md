@@ -122,6 +122,43 @@ cat server.log | python3 scripts/query_local_llm.py
 
 ---
 
+---
+
+## Hermes Agent Adaptation (June 2026)
+
+This skill has been adapted and ported to **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — the open-source AI agent framework by Nous Research.
+
+### What changed
+
+| Original (Antigravity 2.0) | Hermes Adaptation |
+|---|---|
+| `run_command` tool | `terminal` tool with curl |
+| Gemini Cloud only | Multi-provider (DeepSeek, Claude, Grok, local) |
+| Plugin system | Native skill system (`~/.hermes/skills/`) |
+| Script path: `~/.gemini/...` | Script path: `~/.hermes/skills/hybrid-local-router/references/` |
+
+### Hermes Installation
+
+```bash
+# The skill is already created at:
+~/.hermes/skills/mlops/hybrid-local-router/SKILL.md
+
+# Load it in any session:
+/skill hybrid-local-router
+```
+
+The local LLM is configured as a custom provider in Hermes config (`custom_providers.babaudus`), pointing to `http://127.0.0.1:8000/v1` (Qwen3.5-9B-MLX-4bit).
+
+### Hermes-Specific Routing Logic
+
+The adapted SKILL.md instructs Hermes to:
+1. Detect eligible tasks (volume > 500 words, refactoring, translation, parsing, docs)
+2. Query the local LLM via `terminal` + curl (or the bundled `query_local_llm.py`)
+3. Fall back to cloud (DeepSeek) seamlessly if the local server is down
+4. Frame local responses with `[Traité par l'IA Locale - Qwen3.5-9B-MLX]`
+
+Adapted by **Hermes Agent** (@jero87).
+
 ## Contributors & Co-Creators
 
 - **@tripesinn** (Lead Architect & Visionary)

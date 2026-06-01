@@ -1,5 +1,6 @@
 {
   "name": "hybrid-router-plugin",
-  "description": "Routeur intelligent hybride déléguant proactivement les tâches de masse et la correction de code à un LLM local.",
-  "version": "2.0.0"
+  "description": "Routeur intelligent hybride deleguant proactivement les taches de masse et la correction de code a un LLM local. Compatible Antigravity 2.0 et Hermes Agent.",
+  "version": "2.0.1",
+  "platforms": ["antigravity", "hermes-agent"]
 }
