@@ -1,47 +1,124 @@
 ---
 name: hybrid-local-router
-description: Active le comportement de "Routeur Proactif". Permet de déléguer automatiquement et intelligemment les sous-tâches lourdes (synthèse, traduction, génération de doc en masse) ainsi que la correction et le formatage de code à l'IA locale pour économiser le budget cloud.
+description: "Routeur hybride proactif. Delegue les taches lourdes (synthese, traduction, refactoring, formatage, parsing) au LLM local pour economiser le budget cloud. Adapte d'Antigravity 2.0. Fait partie de la strategie d'orchestration multi-modeles (voir skill cost-aware-orchestration)."
+version: 2.0.2
+author: tripesinn
+platforms: [macos, linux]
 ---
 
-# Compétence : Routeur Hybride Proactif (Gemini + Local AI)
+# Routeur Hybride Proactif (Cloud -> Local LLM)
 
-En tant que coordinateur principal (Gemini Cloud), vous êtes équipé d'un modèle d'IA locale haute performance (ex: Phi-4, Llama-3, Mistral) accessible directement sur la machine de l'utilisateur. Vous devez l'utiliser de manière proactive et autonome pour optimiser la consommation de vos crédits Cloud tout en garantissant des réponses rapides et précises.
+En tant qu'agent Hermes utilisant DeepSeek (cloud), tu disposes d'un **modele d'IA local haute performance** (Qwen3.5-9B-MLX-4bit) accessible via le provider custom `babaudus` sur `http://127.0.0.1:8000/v1`. Tu **dois** l'utiliser de maniere proactive pour optimiser la consommation de tokens cloud tout en garantissant des reponses rapides.
 
-## 1. Critères de Délégation Proactive
-Vous devez intercepter la tâche demandée ou la diviser en sous-tâches pour les exécuter sur le modèle local dans les cas suivants :
+## 1. Criteres de Delegation Proactive
 
-1. **Volume de Données Élevé (Taille de Contexte)** :
-   - Le texte d'entrée à traiter ou analyser dépasse **500 mots** ou environ **1500 tokens** (ex: fichiers logs systèmes, longs fichiers de code à analyser, rapports textuels bruts).
-2. **Type de Tâche Éligible** :
-   - **Correction de Code / Refactoring** : Nettoyage d'un fichier de code, correction de fautes simples, réécriture de fonctions selon un standard, génération de tests unitaires génériques, ou ré-écriture de portions de code pour résoudre un problème de lint.
-   - **Synthèse et Résumé** : Analyse et résumé de logs géants, extraction de points clés dans des documents d'historique, résumés d'échanges techniques.
-   - **Traduction en masse** : Traduction de longs fichiers de localisation (JSON, YAML), d'articles ou de fichiers markdown volumineux.
-   - **Génération de Documentation** : Rédaction d'un manuel d'utilisation complet, de documentation d'API (Swagger, OpenAPI), d'explications détaillées de lignes de code ou de docstrings d'un module entier.
-   - **Mise en forme / Parsing** : Conversion et restructuration de gros volumes de données brutes d'un format à un autre (ex: CSV vers JSON, logs bruts vers rapports structurés).
-3. **Demande explicite** :
-   - L'utilisateur mentionne explicitement l'utilisation de l'IA locale, ou demande l'évaluation d'un problème via `localV1` ou `hybrid-local-router`.
+Delegue au modele local dans les cas suivants :
 
-> [!NOTE]
-> Ne déléguez pas les tâches de haut niveau nécessitant des choix d'architecture logicielle critiques, un diagnostic de bugs complexes avec corrélations croisées, ou une interaction multi-fichiers globale, sauf si l'utilisateur le demande. Gardez le rôle de "cerveau" directeur et utilisez l'IA locale comme un assistant de calcul spécialisé.
+### Volume de donnees eleve
+- Texte d'entree > **500 mots** ou ~**1500 tokens** (logs, longs fichiers, rapports)
 
-## 2. Processus d'Exécution et Fallback
-Lorsque vous identifiez une sous-tâche éligible :
+### Types de taches eligibles
 
-1. **Préparation du Prompt** : Créez un prompt autonome, ciblé et très détaillé contenant uniquement la tâche à effectuer par le modèle local, les instructions de formatage attendues, et le code ou texte source nécessaire.
-2. **Exécution de la Commande** : Utilisez l'outil `run_command` pour appeler le script Python universel :
-   ```bash
-   python3 /Users/jero87/.gemini/antigravity/scratch/hybrid-router-plugin/scripts/query_local_llm.py "Votre prompt autonome rédigé ici"
-   ```
-3. **Analyse du Résultat et Gestion de l'Échec (Fallback)** :
-   - **Succès (Code retour 0)** : Récupérez la sortie standard (`stdout`), intégrez-la dans votre réponse finale, et présentez le résultat en indiquant la contribution locale.
-   - **Échec (Code retour non-nul, timeout, serveur local éteint)** : Ne bloquez jamais le flux de travail de l'utilisateur ! Reprenez immédiatement la main de manière transparente. Exécutez vous-même la tâche via Gemini Cloud, tout en ajoutant une note explicative discrète à la fin de votre réponse :
-     *"Note : L'IA locale n'a pas répondu (serveur éteint ou timeout), j'ai finalisé le traitement via Gemini Cloud."*
+| Categorie | Exemples |
+|-----------|----------|
+| Correction / Refactoring | Nettoyage de code, correction de fautes, reecriture selon un standard, generation de tests unitaires |
+| Synthese / Resume | Analyse de logs volumineux, extraction de points cles, resumes de documents |
+| Traduction | Fichiers de localisation (JSON/YAML), articles, markdown volumineux |
+| Documentation | Redaction de manuels, docstrings de modules entiers, documentation d'API |
+| Parsing / Formatage | Conversion CSV vers JSON, logs bruts vers rapports structures, restructuration de donnees |
+| Generation de code boilerplate | Tests unitaires repetitifs, stubs, fichiers de config standardises |
 
-## 3. Format de Restitution
-Affichez les réponses traitées par l'IA locale de façon lisible et valorisante :
+### Regle d'or
+Si la tache peut etre faite par un modele local competent sans necessiter de raisonnement multi-etapes complexe, de diagnostic de bugs croises, ou de decision architecturale -> delegue-la.
 
-*   Utilisez un bloc clair pour délimiter la réponse locale :
-    > 🤖 **[Traité par l'IA Locale]**
-    >
-    > (La réponse générée ou le code corrigé s'affiche ici)
-*   Conservez votre ton professionnel et intégrez harmonieusement cette contribution dans la synthèse finale que vous proposez à l'utilisateur.
+Ne delegue PAS : choix d'architecture, debug de bugs complexes multi-fichiers, planification strategique.
+
+## 2. Methode d'Appel (Hermes)
+
+Utilise l'outil `terminal` pour interroger le LLM local via curl. Pour les prompts courts :
+
+```bash
+curl -s http://127.0.0.1:8000/v1/chat/completions \
+  -H "Content-Type: application/json" \
+  -d "{\"model\": \"Qwen3.5-9B-MLX-4bit\", \"messages\": [{\"role\": \"user\", \"content\": $(printf '%s' \"TON_PROMPT\" | python3 -c 'import json,sys; print(json.dumps(sys.stdin.read()))')}], \"temperature\": 0.3, \"max_tokens\": 4096}" | python3 -c "import sys,json; d=json.load(sys.stdin); print(d['choices'][0]['message']['content'])"
+```
+
+Pour les prompts longs (>200 caracteres), ecris le prompt dans un fichier temporaire puis :
+
+```bash
+python3 -c "
+import json, urllib.request
+prompt = open('/tmp/local_prompt.txt').read()
+req = urllib.request.Request(
+    'http://127.0.0.1:8000/v1/chat/completions',
+    data=json.dumps({'model': 'Qwen3.5-9B-MLX-4bit', 'messages': [{'role': 'user', 'content': prompt}], 'temperature': 0.3, 'max_tokens': 4096}).encode(),
+    headers={'Content-Type': 'application/json'}
+)
+resp = urllib.request.urlopen(req, timeout=60)
+print(json.loads(resp.read())['choices'][0]['message']['content'])
+"
+```
+
+### Alternative : script Python dedie
+
+Un script `query_local_llm.py` est disponible dans `references/`. Pour l'utiliser :
+
+```bash
+python3 ~/.hermes/skills/hybrid-local-router/references/query_local_llm.py "Ton prompt ici"
+```
+
+## 3. Fallback et Gestion d'Echec
+
+- Timeout : 60 secondes max. Si le serveur local ne repond pas, abandonne.
+- Echec (serveur eteint, erreur) : **Ne bloque jamais le flux.** Reprends immediatement la main et execute la tache toi-meme via DeepSeek. Ajoute en fin de reponse :
+
+  Information: L'IA locale n'a pas repondu (serveur eteint ou timeout), j'ai finalise le traitement via DeepSeek Cloud.
+
+## 4. Format de Restitution
+
+Encadre les reponses du LLM local :
+
+[Traite par l'IA Locale - Qwen3.5-9B-MLX]
+
+(contenu produit par le modele local)
+
+## 5. Configuration et Provider Local
+
+Le LLM local est deja configure dans `~/.hermes/config.yaml` sous `custom_providers` :
+
+```yaml
+custom_providers:
+- name: babaudus
+  base_url: http://127.0.0.1:8000/v1
+  api_key: dummy
+  model: Qwen3.5-9B-MLX-4bit
+  api_mode: chat_completions
+```
+
+Les appels `terminal` de ce skill utilisent directement cette URL. Pas besoin de config supplementaire.
+
+## 6. Verification Rapide du Service Local
+
+Avant la premiere delegation d'une session, verifie que le serveur est vivant :
+
+```bash
+curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:8000/v1/models
+```
+
+- **Code 200** : serveur OK, delegation possible.
+- **Code 401** : serveur OK aussi — oMLX (le backend macOS utilise par jero) renvoie 401 sur `/v1/models` meme quand le serveur est operationnel. Les appels `/v1/chat/completions` fonctionnent normalement.
+- **Tout autre code ou echec de connexion** : serveur indisponible. Ne tente pas de delegation et travaille en mode cloud uniquement.
+
+### Alternative : script de deploiement
+
+Un script `deploy_api.sh` est disponible dans le depot GitHub `tripesinn/hybrid-local-router` (`scripts/deploy_api.sh`) et en reference locale (`scripts/deploy_api.sh`). Il supporte trois backends (oMLX, Ollama, vLLM) et gere start/stop/status. Voir `references/deploy-api.md` pour les details.
+
+## 7. Pièges et Bonnes Pratiques
+
+### Ne jamais utiliser `hermes config set`
+La commande `hermes config set` **ecrase integralement** le fichier `config.yaml` au lieu de merger la nouvelle cle. En session 01/06/2026, un `hermes config set` a reduit un fichier de 594 lignes a 8 lignes, detruisant toute la configuration (agents, gateway, memory, skills, TTS, STT, security, platform_toolsets, custom_providers...).
+
+**Regle stricte pour toute modification de config.yaml** : ouvrir Xcode (`open -a Xcode ~/.hermes/config.yaml`) et donner le contenu a copier-coller manuellement. Meme regle pour les autres fichiers systeme sensibles (`~/.hermes/.env`, `config.yaml` de profils, etc.).
+
+### Preference utilisateur
+L'utilisateur (jero) prefere que les modifications de fichiers systeme sensibles passent par Xcode plutot que par des commandes shell directes. En cas de doute, ouvrir Xcode et fournir le contenu.

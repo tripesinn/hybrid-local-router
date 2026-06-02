@@ -1,6 +1,8 @@
-# Hybrid Router Agent (Gemini + Local AI) for Antigravity 2.0
+# Hybrid Router Agent (Cloud + Local AI)
 
-> 🚀 **An intelligent hybrid router plugin that proactively delegates token-heavy tasks (summarization, bulk translation, documentation, and code correction) to a local LLM to save cloud costs, with seamless cloud fallback.**
+> 🚀 **An intelligent hybrid router that proactively delegates token-heavy tasks (summarization, bulk translation, documentation, and code correction) to a local LLM to save cloud costs, with seamless cloud fallback.**
+>
+> 🧠 **Now adapted for Hermes Agent** — the open-source AI agent framework by Nous Research. Works with DeepSeek, Claude, Grok, and any OpenAI-compatible local LLM (oMLX, Ollama, vLLM).
 
 *Read this in: [English](#english-documentation) | [Français (French)](#documentation-en-français)*
 
@@ -9,16 +11,17 @@
 ## English Documentation
 
 ### Overview
-**Hybrid Router Agent** is a plugin designed for the Antigravity 2.0 autonomous agent framework. 
-It enables the cloud-hosted Gemini LLM to act as a **Smart Router**, delegating heavy computation, massive text processing, and standard code formatting/corrections to a local LLM (such as Phi-4, Llama-3, or Mistral running on vLLM, Ollama, LM Studio, etc.) through a standard OpenAI-compatible API.
+**Hybrid Router Agent** is a skill/plugin designed for AI agent frameworks (Antigravity 2.0 and **Hermes Agent**).
+It enables the cloud-hosted LLM to act as a **Smart Router**, delegating heavy computation, massive text processing, and standard code formatting/corrections to a local LLM (such as Phi-4, Qwen, Llama-3, or Mistral running on oMLX, vLLM, Ollama, LM Studio, etc.) through a standard OpenAI-compatible API.
 
-By offloading these heavy tasks, the agent saves significant cloud credits while keeping Gemini as the high-level reasoning "orchestrator" for complex architecture and multi-file logic.
+By offloading these heavy tasks, the agent saves significant cloud credits while keeping the cloud model as the high-level reasoning "orchestrator" for complex architecture and multi-file logic.
 
 ### Key Features
-- 🧠 **Proactive Routing**: Gemini automatically identifies and intercepts heavy workloads (inputs > 500 words / 1500 tokens).
+- 🧠 **Proactive Routing**: Automatically identifies and intercepts heavy workloads (inputs > 500 words / 1500 tokens).
 - 🛠️ **Code Correction & Formatting**: Offloads lint fixes, standard refactoring, and unit test generation to the local model.
 - 📂 **Zero-Dependency Python Script**: The query runner uses Python's standard `urllib` library, requiring no `pip install requests` or extra packages.
-- 🛡️ **Seamless Fallback**: If the local AI is offline, timed out, or returns an error, the agent gracefully falls back to Gemini Cloud to complete the task without user friction.
+- 🛡️ **Seamless Fallback**: If the local AI is offline, timed out, or returns an error, the agent gracefully falls back to the Cloud LLM to complete the task without user friction.
+- 🚀 **Multi-Backend Deploy**: `deploy_api.sh` launches your local LLM server — supports oMLX (macOS), Ollama, and vLLM.
 
 ### Project Structure
 ```text
@@ -215,7 +218,7 @@ curl http://127.0.0.1:8000/v1/models
 
 ## Hermes Agent Adaptation (June 2026)
 
-This skill has been adapted and ported to **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — the open-source AI agent framework by Nous Research.
+This skill has been fully adapted and ported to **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — the open-source AI agent framework by Nous Research. The shipped `SKILL.md` is the latest Hermes v2.0.2, not the original Antigravity version.
 
 ### What changed
 
