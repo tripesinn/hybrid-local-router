@@ -28,10 +28,11 @@ hybrid-router-plugin/
 ├── .gitignore                     # Git ignore rules
 ├── .env.example                   # Environment configuration template
 ├── scripts/
-│   └── query_local_llm.py         # Universal Python script to query local LLMs
+│   ├── query_local_llm.py         # Universal Python script to query local LLMs
+│   └── deploy_api.sh              # Deploy/local-launch the LLM server (oMLX, Ollama, vLLM)
 └── skills/
     └── hybrid-local-router/
-        └── SKILL.md               # System instructions giving Gemini routing behavior
+        └── SKILL.md               # System instructions giving routing behavior
 ```
 
 ### Setup & Installation
@@ -68,6 +69,50 @@ python3 scripts/query_local_llm.py "Summarize this code function..."
 
 # Or pipe long text/logs into the script via stdin
 cat logs.txt | python3 scripts/query_local_llm.py
+```
+
+### Deploy API (Local LLM Server)
+
+The `deploy_api.sh` script automates launching your local LLM server so the hybrid router can reach it. Supports three backends:
+
+| Backend | Platform | Command |
+|---------|----------|---------|
+| **oMLX** | macOS | `./scripts/deploy_api.sh` (auto-detect) |
+| **Ollama** | macOS / Linux / Windows | `./scripts/deploy_api.sh --backend ollama` |
+| **vLLM** | Linux (GPU) | `./scripts/deploy_api.sh --backend vllm` |
+
+```bash
+# Auto-detect and start the server
+./scripts/deploy_api.sh
+
+# Check if the server is running
+./scripts/deploy_api.sh --status
+
+# Stop the server
+./scripts/deploy_api.sh --stop
+
+# Force a specific backend
+./scripts/deploy_api.sh --backend ollama
+```
+
+**Configuration** (in `.env`):
+```ini
+# Force a backend (omlx, ollama, vllm) or leave empty for auto-detect
+LOCAL_AI_BACKEND=
+
+# Server port (default: 8000 for oMLX/vLLM, 11434 for Ollama)
+LOCAL_AI_PORT=8000
+
+# Model name (e.g., phi4, Qwen3.5-9B-MLX-4bit)
+LOCAL_AI_MODEL=mlx-community/phi-4-4bit
+
+# vLLM only: GPU memory fraction (default: 0.9)
+LOCAL_AI_GPU_MEM=0.9
+```
+
+After starting, verify with:
+```bash
+curl http://127.0.0.1:8000/v1/models
 ```
 
 ---
@@ -118,6 +163,50 @@ python3 scripts/query_local_llm.py "Donne-moi 5 idées de projets Python"
 
 # Envoyer un fichier texte ou des logs via l'entrée standard (stdin)
 cat server.log | python3 scripts/query_local_llm.py
+```
+
+### Déploiement API (Serveur LLM Local)
+
+Le script `deploy_api.sh` automatise le lancement de votre serveur LLM local. Trois backends supportés :
+
+| Backend | Plateforme | Commande |
+|---------|-----------|----------|
+| **oMLX** | macOS | `./scripts/deploy_api.sh` (auto-détection) |
+| **Ollama** | macOS / Linux / Windows | `./scripts/deploy_api.sh --backend ollama` |
+| **vLLM** | Linux (GPU) | `./scripts/deploy_api.sh --backend vllm` |
+
+```bash
+# Détection automatique et démarrage
+./scripts/deploy_api.sh
+
+# Vérifier l'état du serveur
+./scripts/deploy_api.sh --status
+
+# Arrêter le serveur
+./scripts/deploy_api.sh --stop
+
+# Forcer un backend spécifique
+./scripts/deploy_api.sh --backend ollama
+```
+
+**Configuration** (dans `.env`) :
+```ini
+# Forcer un backend (omlx, ollama, vllm) ou laisser vide pour auto-détection
+LOCAL_AI_BACKEND=
+
+# Port du serveur (défaut: 8000 pour oMLX/vLLM, 11434 pour Ollama)
+LOCAL_AI_PORT=8000
+
+# Nom du modèle (ex: phi4, Qwen3.5-9B-MLX-4bit)
+LOCAL_AI_MODEL=mlx-community/phi-4-4bit
+
+# vLLM uniquement : fraction de mémoire GPU (défaut: 0.9)
+LOCAL_AI_GPU_MEM=0.9
+```
+
+Vérification après démarrage :
+```bash
+curl http://127.0.0.1:8000/v1/models
 ```
 
 ---
