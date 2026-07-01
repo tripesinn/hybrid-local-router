@@ -12,66 +12,44 @@
 
 ### Overview
 **Hybrid Router Agent** is a skill/plugin designed for AI agent frameworks (Antigravity 2.0 and **Hermes Agent**).
-It enables the cloud-hosted LLM to act as a **Smart Router**, delegating heavy computation, massive text processing, and standard code formatting/corrections to a local LLM (such as Phi-4, Qwen, Llama-3, or Mistral running on oMLX, vLLM, Ollama, LM Studio, etc.) through a standard OpenAI-compatible API.
+It enables the cloud-hosted LLM to act as a **Smart Router**, delegating heavy computation, massive text processing, and standard code formatting/corrections to a local LLM (such as oMLX, Phi-4, Llama-3, or Mistral running locally) through a standard OpenAI-compatible API.
 
-By offloading these heavy tasks, the agent saves significant cloud credits while keeping the cloud model as the high-level reasoning "orchestrator" for complex architecture and multi-file logic.
+By offloading these heavy tasks **only when justified**, the agent saves significant cloud credits while keeping the cloud model as the high-level reasoning "orchestrator" for complex architecture and multi-file logic.
 
 ### Key Features
 - 🧠 **Proactive Routing**: Automatically identifies and intercepts heavy workloads (inputs > 500 words / 1500 tokens).
-- 🛠️ **Code Correction & Formatting**: Offloads lint fixes, standard refactoring, and unit test generation to the local model.
-- 📂 **Zero-Dependency Python Script**: The query runner uses Python's standard `urllib` library, requiring no `pip install requests` or extra packages.
+- 🛠️ **Automated Code Correction**: Offloads lint fixes and standard refactoring to the local model via `apply_local_ai.py`, which safely creates a `.bak` backup before writing.
+- 📂 **Zero-Dependency Scripts**: The query scripts use `requests` and standard libraries.
 - 🛡️ **Seamless Fallback**: If the local AI is offline, timed out, or returns an error, the agent gracefully falls back to the Cloud LLM to complete the task without user friction.
 - 🚀 **Multi-Backend Deploy**: `deploy_api.sh` launches your local LLM server — supports oMLX (macOS), Ollama, and vLLM.
 
 ### Project Structure
 ```text
 hybrid-router-plugin/
-├── plugin.json                    # Plugin metadata
+├── AGENTS.md                      # Gemini rules to proactively delegate tasks
 ├── README.md                      # Documentation (this file)
-├── .gitignore                     # Git ignore rules
 ├── .env.example                   # Environment configuration template
 ├── scripts/
-│   ├── query_local_llm.py         # Universal Python script to query local LLMs
+│   ├── query_local_ai.py          # Script for general queries to the local LLM
+│   ├── apply_local_ai.py          # Script to safely apply local AI code edits
 │   └── deploy_api.sh              # Deploy/local-launch the LLM server (oMLX, Ollama, vLLM)
-└── skills/
-    └── hybrid-local-router/
-        └── SKILL.md               # System instructions giving routing behavior
+└── .agents/
+    └── skills/
+        └── local-corrector/
+            └── SKILL.md           # System instructions giving routing behavior
 ```
 
-### Setup & Installation
-
-1. **Clone/Copy the plugin** into your Antigravity plugins directory (usually `~/.gemini/config/plugins/`):
-   ```bash
-   cp -r hybrid-router-plugin ~/.gemini/config/plugins/
-   ```
-
-2. **Configure your Local LLM Server**:
-   Ensure you have a local server running. Common setups include:
-   - **Ollama**: Run `ollama run phi4` (Ollama exposes an OpenAI-compatible API on `http://localhost:11434/v1/chat/completions`).
-   - **LM Studio**: Start the Local Server on port `1234`.
-   - **vLLM / LocalAI**: Start your model exposing standard port `8000`.
-
-3. **Configure Environment Variables**:
-   Copy `.env.example` to `.env` in the plugin directory and set your parameters:
-   ```bash
-   cp .env.example .env
-   ```
-   Edit `.env`:
-   ```ini
-   LOCAL_AI_URL=http://127.0.0.1:8000/v1/chat/completions
-   LOCAL_AI_MODEL=mlx-community/phi-4-4bit
-   LOCAL_AI_TIMEOUT=60
-   LOCAL_AI_API_KEY=
-   ```
-
 ### Command Line Usage
-You can test the Python script manually from your terminal:
-```bash
-# Pass the prompt as an argument
-python3 scripts/query_local_llm.py "Summarize this code function..."
+You can test the Python scripts manually from your terminal:
 
-# Or pipe long text/logs into the script via stdin
-cat logs.txt | python3 scripts/query_local_llm.py
+**Query the Local AI:**
+```bash
+python3 scripts/query_local_ai.py "Explain how quantum computing works" "You are a helpful assistant"
+```
+
+**Apply a code correction via Local AI:**
+```bash
+python3 scripts/apply_local_ai.py src/main.js "Refactor this file to use arrow functions"
 ```
 
 ### Deploy API (Local LLM Server)
@@ -123,49 +101,44 @@ curl http://127.0.0.1:8000/v1/models
 ## Documentation en Français
 
 ### Présentation
-**Hybrid Router Agent** est un plugin conçu pour le framework d'agents autonomes Antigravity 2.0.
-Il permet à l'IA hébergée dans le Cloud (Gemini) d'agir comme un **Routeur Intelligent**. Gemini délègue de manière proactive les tâches lourdes en tokens, les analyses de gros fichiers de données et les corrections de code standards à un modèle de langage local (ex: Phi-4, Llama-3, Mistral tournant sous Ollama, LM Studio, vLLM) via une API locale compatible OpenAI.
+**Hybrid Router Agent** est un plugin conçu pour les frameworks d'agents autonomes (Antigravity 2.0 et Hermes Agent).
+Il permet à l'IA hébergée dans le Cloud d'agir comme un **Routeur Intelligent**. L'agent délègue **lorsque c'est justifié** les tâches lourdes en tokens, les analyses de gros fichiers de données et les corrections de code standards à un modèle de langage local (ex: oMLX, Phi-4, Llama-3) via une API locale compatible OpenAI.
 
-Cette approche permet de préserver vos crédits Cloud tout en conservant la puissance d'analyse stratégique de Gemini pour les tâches de haut niveau.
+Cette approche permet de préserver vos crédits Cloud tout en conservant la puissance d'analyse stratégique du modèle Cloud pour les tâches de haut niveau. L'agent cloud décide lui-même de s'effacer au profit de l'IA locale pour le "sale boulot".
 
 ### Fonctionnalités Clés
-- 🧠 **Routage Proactif** : Interception automatique des requêtes volumineuses (> 500 mots ou ~1500 tokens).
-- 🛠️ **Correction de Code & Refactoring** : Délégation des résolutions de lint, génération de tests unitaires et réécritures simples au LLM local.
-- 📂 **Script Python Universel Sans Dépendance** : Écrit en pur Python avec la bibliothèque standard `urllib`, aucun `pip install` n'est nécessaire.
-- 🛡️ **Gestion de Panne Transparente (Fallback)** : Si le serveur local est éteint ou met trop de temps à répondre, Gemini prend le relais de manière invisible pour finaliser votre demande.
+- 🧠 **Routage Proactif** : Interception automatique des requêtes volumineuses et des opérations de refactoring massif.
+- 🛠️ **Correction de Code Sécurisée** : Le script `apply_local_ai.py` demande à l'IA locale de corriger le code et crée automatiquement une sauvegarde `.bak` pour éviter toute perte de données.
+- 🛡️ **Gestion de Panne (Fallback & OOM)** : Gestion automatique des erreurs 507 (Out of Memory) en divisant le nombre de tokens dynamiquement.
+- 🚀 **Déploiement Multi-Backend** : `deploy_api.sh` gère oMLX, Ollama, et vLLM.
 
-### Configuration et Installation
+### Arborescence
+```text
+hybrid-router-plugin/
+├── AGENTS.md                      # Règles pour la délégation locale
+├── README.md                      # Ce fichier de documentation
+├── .env.example                   # Template des variables d'environnement
+├── scripts/
+│   ├── query_local_ai.py          # Requêtes générales vers l'IA locale
+│   ├── apply_local_ai.py          # Application automatique de corrections sur un fichier
+│   └── deploy_api.sh              # Lanceur du serveur local LLM
+└── .agents/
+    └── skills/
+        └── local-corrector/
+            └── SKILL.md           # Instruction du skill de correction locale
+```
 
-1. **Copiez le dossier du plugin** dans le répertoire des plugins d'Antigravity (généralement `~/.gemini/config/plugins/`) :
-   ```bash
-   cp -r hybrid-router-plugin ~/.gemini/config/plugins/
-   ```
+### Utilisation Manuelle
+Vous pouvez tester le système directement dans votre terminal :
 
-2. **Démarrez votre serveur d'IA local** :
-   - **Ollama** : `ollama run phi4` (exposé par défaut sur `http://localhost:11434/v1/chat/completions`).
-   - **LM Studio** : Lancez le serveur local sur le port `1234`.
-   - **vLLM / LocalAI** : Lancez votre modèle sur le port `8000`.
-
-3. **Configurez les variables d'environnement** :
-   Créez un fichier `.env` basé sur `.env.example` dans le dossier du plugin :
-   ```bash
-   cp .env.example .env
-   ```
-   Exemple de configuration dans `.env` :
-   ```ini
-   LOCAL_AI_URL=http://localhost:11434/v1/chat/completions
-   LOCAL_AI_MODEL=phi4
-   LOCAL_AI_TIMEOUT=60
-   ```
-
-### Test Manuel du Script
-Vous pouvez tester le script directement dans votre terminal :
+**Poser une question à l'IA locale :**
 ```bash
-# Envoyer le prompt en argument
-python3 scripts/query_local_llm.py "Donne-moi 5 idées de projets Python"
+python3 scripts/query_local_ai.py "Génère 5 idées de projets" "Tu es un expert"
+```
 
-# Envoyer un fichier texte ou des logs via l'entrée standard (stdin)
-cat server.log | python3 scripts/query_local_llm.py
+**Corriger un fichier existant :**
+```bash
+python3 scripts/apply_local_ai.py index.html "Ajoute un pied de page avec copyright"
 ```
 
 ### Déploiement API (Serveur LLM Local)
@@ -214,8 +187,6 @@ curl http://127.0.0.1:8000/v1/models
 
 ---
 
----
-
 ## Hermes Agent Adaptation (June 2026)
 
 This skill has been fully adapted and ported to **[Hermes Agent](https://github.com/NousResearch/hermes-agent)** — the open-source AI agent framework by Nous Research. The shipped `SKILL.md` is the latest Hermes v2.0.2, not the original Antigravity version.
@@ -261,4 +232,3 @@ Adapted by **Hermes Agent** (@jero87).
 ## License
 MIT License. Feel free to use, share, and improve this plugin!
 Disponible pour toute la communauté Antigravity.
-
